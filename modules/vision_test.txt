@@ -1,0 +1,105 @@
+import os
+import face_recognition
+import numpy as np
+
+os.environ["QT_LOGGING_RULES"] = "*.debug=false;qt.qpa.*=false"
+os.environ["QT_QPA_PLATFORM"] = "xcb"
+import cv2
+
+FACES_DIR = os.path.join(os.path.dirname(__file__), "..", "faces")
+TEMP_IMAGE = os.path.join(os.path.dirname(__file__), "..", "temp_capture.jpg")
+
+
+def _charger_visages_connus():
+    encodages = []
+    noms = []
+
+    if not os.path.exists(FACES_DIR):
+        os.makedirs(FACES_DIR)
+        return encodages, noms
+
+    for fichier in os.listdir(FACES_DIR):
+        if fichier.lower().endswith((".jpg", ".jpeg", ".png")):
+            chemin = os.path.join(FACES_DIR, fichier)
+            image = face_recognition.load_image_file(chemin)
+            enc = face_recognition.face_encodings(image)
+            if enc:
+                encodages.append(enc[0])
+                noms.append(os.path.splitext(fichier)[0])
+
+    return encodages, noms
+
+
+def capturer_visage():
+    print("[INFO] Positionne ton visage devant la camera")
+    print("[INFO] Appuie sur ESPACE quand le visage est detecte")
+
+   # cap = cv2.VideoCapture(0)
+	cap = cv2.VideoCapture("http://" + ROBOT_IP + ":8080/stream.mjpg")
+
+    if not cap.isOpened():
+        print("[ERREUR] Impossible d'ouvrir la camera")
+        return False
+
+    captured = False
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            break
+
+        rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        locations = face_recognition.face_locations(rgb)
+
+        for (top, right, bottom, left) in locations:
+            cv2.rectangle(frame, (left, top), (right, bottom), (0, 200, 0), 2)
+            cv2.putText(frame, "Visage detecte !", (left, top - 10),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 200, 0), 2)
+
+        cv2.imshow("NAO - Reconnaissance faciale (ESPACE pour capturer)", frame)
+
+        key = cv2.waitKey(1) & 0xFF
+        if key == 32:
+            if locations:
+                cv2.imwrite(TEMP_IMAGE, frame)
+                print("[INFO] Image capturee avec visage")
+                captured = True
+            else:
+                print("[INFO] Aucun visage detecte, repositionne-toi")
+            break
+        elif key == 27:
+            print("[INFO] Capture annulee")
+            break
+
+    cap.release()
+    cv2.destroyAllWindows()
+    return captured
+
+
+def identify_child():
+    captured = capturer_visage()
+    if not captured or not os.path.exists(TEMP_IMAGE):
+        return "inconnu"
+
+    image_inconnue = face_recognition.load_image_file(TEMP_IMAGE)
+    encodages_inconnus = face_recognition.face_encodings(image_inconnue)
+
+    if not encodages_inconnus:
+        print("[INFO] Aucun visage detecte dans l'image capturee")
+        return "inconnu"
+
+    encodage_inconnu = encodages_inconnus[0]
+    encodages_connus, noms_connus = _charger_visages_connus()
+
+    if not encodages_connus:
+        return "inconnu"
+
+    distances = face_recognition.face_distance(encodages_connus, encodage_inconnu)
+    index_min = np.argmin(distances)
+
+    if distances[index_min] < 0.5:
+        nom = noms_connus[index_min]
+        print(f"[INFO] Reconnu : {nom} (distance: {distances[index_min]:.3f})")
+        return nom
+
+    print(f"[INFO] Visage non reconnu (distance min: {distances[index_min]:.3f})")
+    return "inconnu"

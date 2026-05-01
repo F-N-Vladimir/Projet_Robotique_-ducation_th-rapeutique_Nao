@@ -1,0 +1,21 @@
+# Fichiers sensibles
+api/config_db.php
+
+# Données personnelles
+data/*.json
+faces/*.jpg
+temp_capture.jpg
+
+# Fichiers temporaires
+/tmp/
+__pycache__/
+*.pyc
+*.pyo
+
+# Images capturées
+*_capture.jpg
+nao_face_capture.jpg
+
+# Logs
+*.log
+EOF

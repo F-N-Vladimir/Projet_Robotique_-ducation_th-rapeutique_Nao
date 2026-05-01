@@ -1,0 +1,49 @@
+import face_recognition
+import os
+import cv2
+from naoqi import ALProxy
+from config import ROBOT_IP, PORT
+
+def capture_from_nao():
+    """ Capture une image via la caméra de Nao et l'enregistre temporairement """
+    video_proxy = ALProxy("ALVideoDevice", ROBOT_IP, PORT)
+
+    # Paramètres : Top Camera, Résolution 640x480, Espace couleur RGB
+    client_id = video_proxy.subscribe("python_client", 2, 11, 5)
+    nao_image = video_proxy.getImageRemote(client_id)
+    video_proxy.unsubscribe(client_id)
+
+    # Conversion de l'image Nao en format exploitable (OpenCV)
+    import numpy as np
+    width, height = nao_image[0], nao_image[1]
+    image_data = np.frombuffer(nao_image[6], dtype=np.uint8).reshape((height, width, 3))
+    
+    temp_path = "temp_capture.jpg"
+    cv2.imwrite(temp_path, cv2.cvtColor(image_data, cv2.COLOR_RGB2BGR))
+    return temp_path
+
+def identify_child():
+    """ Compare la capture avec les visages connus dans le dossier /faces """
+    unknown_path = capture_from_nao()
+    unknown_image = face_recognition.load_image_file(unknown_path)
+    
+    # Encodage du visage capturé
+    unknown_encodings = face_recognition.face_encodings(unknown_image)
+    if not unknown_encodings:
+        return None # Aucun visage détecté
+
+    target_encoding = unknown_encodings[0]
+    
+    # Parcourir le dossier des visages connus
+    for file in os.listdir("faces/"):
+        if file.endswith(".jpg"):
+            known_image = face_recognition.load_image_file("faces/" + file)
+            known_encoding = face_recognition.face_encodings(known_image)[0]
+            
+            # Comparaison (tolérance de 0.6 par défaut)
+            results = face_recognition.compare_faces([known_encoding], target_encoding)
+            
+            if results[0]:
+                return file.replace(".jpg", "") # Retourne le nom de l'enfant
+                
+    return "inconnu"

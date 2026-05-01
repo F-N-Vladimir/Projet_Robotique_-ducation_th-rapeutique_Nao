@@ -1,0 +1,16 @@
+#!/bin/bash
+echo "Demarrage du flux camera NAO..."
+
+pkill -f "nao_stream.py" 2>/dev/null
+sleep 1
+
+python2.7 /tmp/nao_stream.py &
+NAO_PID=$!
+echo "Flux NAO demarre (PID: $NAO_PID)"
+
+sleep 3
+
+python3 /tmp/nao_viewer.py
+
+kill $NAO_PID 2>/dev/null
+echo "Flux arrete."

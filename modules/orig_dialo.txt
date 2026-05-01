@@ -1,0 +1,46 @@
+from modules.speech import say, listen
+from modules.database import save_data
+
+def ask(nom, age, question):
+    say(question)
+    reponse = listen()
+    save_data(nom, age, question, reponse, type_data="interaction")
+    return reponse
+
+
+def introduction():
+    say("Bonjour mon ami ! Je suis ton robot NAO.")
+    say("Je vais discuter avec toi et t'aider à apprendre sur le diabète.")
+
+
+def get_basic_info():
+    nom = ask("", "", "Comment tu t'appelles ?")
+    age = ask(nom, "", "Quel âge as-tu ?")
+    return nom, age
+
+
+def ask_feelings(nom, age):
+    ask(nom, age, "Comment tu te sens aujourd'hui ?")
+
+
+def explain_diabetes():
+    say("Le diabète est une maladie où le sucre dans le sang n'est pas bien contrôlé.")
+    say("L'insuline aide le sucre à entrer dans le corps.")
+
+
+def quiz(nom, age):
+    answer = ask(nom, age, "Hypoglycémie veut dire : A trop de sucre ou B pas assez ?")
+
+    if "B" in answer.upper():
+        say("Bravo !")
+    else:
+        say("Ce n'est pas grave, la bonne réponse est pas assez de sucre.")
+
+
+def role_play(nom, age):
+    answer = ask(nom, age, "Tu te sens faible, que fais-tu ? Prendre du sucre ou dormir ?")
+
+    if "sucre" in answer.lower():
+        say("Très bien !")
+    else:
+        say("Attention, il faut prendre du sucre rapidement !")

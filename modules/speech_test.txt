@@ -1,0 +1,6 @@
+def say(text):
+    print(f"NAO: {text}")
+
+
+def listen():
+    return input("Enfant: ")

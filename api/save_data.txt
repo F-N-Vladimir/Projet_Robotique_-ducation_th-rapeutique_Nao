@@ -1,0 +1,19 @@
+<?php
+
+$conn = new mysqli("localhost", "root", "", "nao_db");
+
+$data = json_decode(file_get_contents("php://input"), true);
+
+$nom = $data["nom"];
+$age = $data["age"];
+$question = $data["question"];
+$reponse = $data["reponse"];
+
+$sql = "INSERT INTO interactions (nom, age, question, reponse)
+        VALUES ('$nom', '$age', '$question', '$reponse')";
+
+$conn->query($sql);
+
+echo json_encode(["status" => "ok"]);
+
+?>

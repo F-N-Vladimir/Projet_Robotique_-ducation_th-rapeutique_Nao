@@ -1,0 +1,1 @@
+{"type": "interaction", "nom": "azer", "age": "10", "question": "Hypoglyc\u00e9mie veut dire : A trop de sucre ou B pas assez ?", "reponse": "B"}
